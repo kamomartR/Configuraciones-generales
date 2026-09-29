@@ -1,0 +1,160 @@
+{
+  "Uuid": "fdaeb9a9-669b-4345-8f84-bf38b2487669",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "CARGAR PARAMETRO COMPARTIDO INTEGRACIÓN",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\n# 1. Cargar API de Revit\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 2. Cargar Servicios de Dynamo\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\napp = doc.Application\r\n\r\n# --- CONFIGURACIÓN ---\r\nruta_txt = r\"C:\\Users\\DELL\\Documents\\CDE NORA\\PARAMETROS COMPARTIDOS.txt\"\r\n\r\nnombres_parametros = [\r\n    \"MATERIAL INTEGRADO\", \"NIVEL INTEGRADO\", \"CLASIFICACIÓN\", \r\n    \"AREA INTEGRADO\", \"LONGITUD INTEGRADO\", \"NOMBRE INTEGRADO\", \"VOLUMEN INTEGRADO\"\r\n]\r\n\r\n# 3. Cargar Archivo de Parámetros Compartidos\r\napp.SharedParametersFilename = ruta_txt\r\ndef_file = app.OpenSharedParameterFile()\r\n\r\nif def_file is None:\r\n    OUT = \"Error: No se pudo abrir el archivo TXT en la ruta especificada.\"\r\nelse:\r\n    # 4. Crear el CategorySet con categorías principales de modelo\r\n    cat_set = app.Create.NewCategorySet()\r\n    \r\n    for cat in doc.Settings.Categories:\r\n        # Solo categorías principales de modelo o anotación que permitan vinculación\r\n        if cat.AllowsBoundParameters and cat.CategoryType == CategoryType.Model:\r\n            cat_set.Insert(cat)\r\n\r\n    # 5. Ejecutar transacción\r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    resultados = []\r\n\r\n    try:\r\n        # Compatibilidad de grupo entre versiones de Revit (Revit 2024+ usa GroupTypeId)\r\n        try:\r\n            grupo_final = GroupTypeId.IdentityData\r\n        except AttributeError:\r\n            grupo_final = BuiltInParameterGroup.PG_IDENTITY_DATA\r\n\r\n        binding_map = doc.ParameterBindings\r\n\r\n        for nombre in nombres_parametros:\r\n            p_def = None\r\n            for group in def_file.Groups:\r\n                p_def = group.Definitions.get_Item(nombre)\r\n                if p_def is not None:\r\n                    break\r\n            \r\n            if p_def is not None:\r\n                nuevo_binding = app.Create.NewInstanceBinding(cat_set)\r\n                \r\n                # Si el parámetro ya existe en el proyecto, se actualiza con ReInsert\r\n                if binding_map.Contains(p_def):\r\n                    binding_map.ReInsert(p_def, nuevo_binding, grupo_final)\r\n                    resultados.append(f\"Actualizado (ReInsert): {nombre}\")\r\n                else:\r\n                    binding_map.Insert(p_def, nuevo_binding, grupo_final)\r\n                    resultados.append(f\"Insertado nuevo: {nombre}\")\r\n            else:\r\n                resultados.append(f\"No hallado en TXT: {nombre}\")\r\n\r\n        OUT = \"\\n\".join(resultados)\r\n\r\n    except Exception as e:\r\n        OUT = f\"Error crítico: {str(e)}\"\r\n\r\n    TransactionManager.Instance.TransactionTaskDone()",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "2957fa0c1ba8450eb71d7dcae7910d2d",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "0d4a1613679f48c888cf7aa0fb17ea36",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e5d4f22cdde64e6a83c449ab13bbd8f0",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 420.0,
+      "WatchHeight": 200.0,
+      "Id": "f118045f6f9d4eaebd2f94a361e3a62a",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "4f12c9e60fdd4cd78b522bb5d9fca196",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "91a9138a2c0947669f2eecef66e57e8d",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "e5d4f22cdde64e6a83c449ab13bbd8f0",
+      "End": "4f12c9e60fdd4cd78b522bb5d9fca196",
+      "Id": "9e153e7436354d6ebf2aeb34eb0eaf14",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Propiedades",
+      "Version": "2.19",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "6.1",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "2957fa0c1ba8450eb71d7dcae7910d2d",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 115.2000000000001,
+        "Y": 139.2
+      },
+      {
+        "Id": "f118045f6f9d4eaebd2f94a361e3a62a",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 458.40000000000003,
+        "Y": 278.4
+      }
+    ],
+    "Annotations": [],
+    "X": 61.70671855782676,
+    "Y": 172.01211093830176,
+    "Zoom": 0.4322457246083856
+  }
+}

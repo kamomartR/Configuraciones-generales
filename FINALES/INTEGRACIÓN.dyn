@@ -1,0 +1,605 @@
+{
+  "Uuid": "b823932a-7612-4ee1-a10a-2133fb8af38c",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "INTEGRACIÓN",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\n# Importar Revit API\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Importar DocumentManager y TransactionManager\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1. Obtener todos los elementos del modelo que no sean tipos\r\ncol = FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()\r\n\r\n# 2. Lista de parámetros en orden de prioridad\r\nnombres_busqueda = [\"Nivel de referencia\", \"Nivel\", \"Nivel base\", \"Restricción de base\"]\r\nparametro_destino = \"NIVEL INTEGRADO\"\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nconteo_exitos = 0\r\n\r\nfor el in col:\r\n    # Solo procesar elementos que tengan el parámetro destino\r\n    p_dest = el.LookupParameter(parametro_destino)\r\n    \r\n    # En CPython3, a veces es mejor verificar p_dest is not None\r\n    if p_dest is not None and not p_dest.IsReadOnly:\r\n        valor_encontrado = None\r\n        \r\n        # 3. Buscar el primer parámetro que coincida y tenga valor\r\n        for nombre in nombres_busqueda:\r\n            p_origen = el.LookupParameter(nombre)\r\n            \r\n            if p_origen is not None and p_origen.HasValue:\r\n                # Intentamos obtener el valor como texto (Nombre del nivel)\r\n                valor_encontrado = p_origen.AsValueString()\r\n                \r\n                # Si AsValueString falla o es nulo, intentamos por ElementId\r\n                if not valor_encontrado:\r\n                    id_nivel = p_origen.AsElementId()\r\n                    \r\n                    # Validación de ID compatible con Revit 2024+ y versiones previas\r\n                    if id_nivel and id_nivel != ElementId.InvalidElementId:\r\n                        nivel_obj = doc.GetElement(id_nivel)\r\n                        if nivel_obj:\r\n                            valor_encontrado = nivel_obj.Name\r\n                \r\n                if valor_encontrado:\r\n                    break\r\n        \r\n        # 4. Escribir el valor en NIVEL INTEGRADO\r\n        if valor_encontrado:\r\n            try:\r\n                p_dest.Set(valor_encontrado)\r\n                conteo_exitos += 1\r\n            except:\r\n                continue\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# Salida con el conteo de elementos afectados (usando f-strings de Python 3)\r\nOUT = f\"Proceso completado. Se actualizaron {conteo_exitos} elementos.\"",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "20756662ccee402fbf7869295f50d17a",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "09e39108eb614540a893f05f199ebe8c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "dbf9571bb3f34262b1b00e182b463375",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 402.0,
+      "WatchHeight": 38.0,
+      "Id": "9edbc214adec41ecaf2f618f8d1c8414",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "4d6d8c8b42c3489caffab97953350adb",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "454ac6d76a4b4de7b1685a08928eb9f1",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 320.0,
+      "WatchHeight": 38.0,
+      "Id": "5d7e31ce22c44fed99d7489387b11bd9",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "9b50022ee1344a15a14b6dcbaaa7d3d5",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "27b54ccaba724ed8921f587e1b7682a4",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\n# Importar Revit API\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Importar DocumentManager y TransactionManager\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Recolectar TODOS los elementos que no sean tipos\r\ncollector = FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()\r\n\r\nresultados = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nfor e in collector:\r\n    try:\r\n        # Validación de categoría para CPython3\r\n        if e.Category is None: \r\n            continue\r\n        \r\n        nombre_mat = None\r\n        type_id = e.GetTypeId()\r\n        \r\n        # Validación de ElementId compatible\r\n        e_type = doc.GetElement(type_id) if type_id != ElementId.InvalidElementId else None\r\n        \r\n        # ESTRATEGIA 1: Estructuras compuestas (Muros, Suelos, Techos)\r\n        if e_type is not None and hasattr(e_type, \"GetCompoundStructure\"):\r\n            comp_struc = e_type.GetCompoundStructure()\r\n            if comp_struc is not None:\r\n                layers = comp_struc.GetLayers()\r\n                if layers:\r\n                    m_id = layers[0].MaterialId\r\n                    if m_id != ElementId.InvalidElementId:\r\n                        material_elem = doc.GetElement(m_id)\r\n                        if material_elem:\r\n                            nombre_mat = material_elem.Name\r\n\r\n        # ESTRATEGIA 2: Parámetros de Material en Instancia\r\n        if not nombre_mat:\r\n            for p_name in [\"Material\", \"Structural Material\", \"Material estructural\"]:\r\n                p = e.LookupParameter(p_name)\r\n                if p is not None and p.HasValue:\r\n                    m_id = p.AsElementId()\r\n                    if m_id != ElementId.InvalidElementId:\r\n                        material_elem = doc.GetElement(m_id)\r\n                        if material_elem:\r\n                            nombre_mat = material_elem.Name\r\n                            break\r\n\r\n        # ESTRATEGIA 3: Buscar en el Tipo\r\n        if not nombre_mat and e_type is not None:\r\n            p = e_type.LookupParameter(\"Material\")\r\n            if p is not None and p.HasValue:\r\n                m_id = p.AsElementId()\r\n                if m_id != ElementId.InvalidElementId:\r\n                    material_elem = doc.GetElement(m_id)\r\n                    if material_elem:\r\n                        nombre_mat = material_elem.Name\r\n\r\n        # ESCRIBIR RESULTADO\r\n        if nombre_mat:\r\n            param_destino = e.LookupParameter(\"MATERIAL INTEGRADO\")\r\n            if param_destino is not None and not param_destino.IsReadOnly:\r\n                param_destino.Set(nombre_mat)\r\n                resultados.append(f\"{e.Category.Name}: {nombre_mat}\")\r\n                \r\n    except Exception:\r\n        continue\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# Salida formateada para Python 3\r\nOUT = f\"Se procesaron {len(resultados)} materiales con éxito.\" if resultados else \"No se encontraron materiales para asignar.\"",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "182332a000244b5da8cea31bd0aa19f5",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "2ab5328a314b42fa9b815c62d5ec05da",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "52f3b896e5584aa782b893b293641122",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Usamos el collector que te funcionó en el de materiales\r\ncollector = FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()\r\n\r\nparam_objetivo = \"NOMBRE INTEGRADO\"\r\nconteo_exito = 0\r\nlogs = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nfor e in collector:\r\n    try:\r\n        # 1. Obtener el nombre del tipo (TU_PVCS)\r\n        t_id = e.GetTypeId()\r\n        if t_id == ElementId.InvalidElementId: continue\r\n        \r\n        tipo_elem = doc.GetElement(t_id)\r\n        # Accedemos al BuiltInParameter del nombre para evitar problemas de idioma\r\n        nombre_tipo = tipo_elem.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()\r\n\r\n        # 2. BUSCAR EL PARÁMETRO DE FORMA MANUAL (Más seguro que LookupParameter)\r\n        p_destino = None\r\n        for p in e.Parameters:\r\n            if p.Definition.Name == param_objetivo:\r\n                p_destino = p\r\n                break\r\n        \r\n        # 3. Intentar la escritura\r\n        if p_destino and not p_destino.IsReadOnly:\r\n            p_destino.Set(nombre_tipo)\r\n            conteo_exito += 1\r\n        \r\n    except Exception as ex:\r\n        continue\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# Salida clara\r\nif conteo_exito > 0:\r\n    OUT = \"¡ÉXITO! Se actualizaron {} elementos.\".format(conteo_exito)\r\nelse:\r\n    OUT = \"Sigue dando 0. Posible causa: El parámetro 'NOMBRE INTEGRADO' no está asignado a la categoría de los elementos seleccionados.\"",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "e1f8f5e09d8e4cd6bbf0eb551407f4d8",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "4c2614e2abee4d37a33f19a424e17466",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0de09ef1a4c94ad6ab94184d29b8f8ce",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\n# Importar la API de Revit\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Importar el Gestor de Documentos\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n# Obtener el documento actual\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1. Recolectar todos los elementos del modelo (excluyendo tipos)\r\ncollector = FilteredElementCollector(doc).WhereElementIsNotElementType()\r\n\r\n# 2. Iniciar la transacción para poder escribir datos\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\ncount = 0\r\nerrors = 0\r\n\r\nfor item in collector:\r\n    try:\r\n        # Obtener el ID del subproyecto del elemento\r\n        workset_id = item.WorksetId\r\n        \r\n        # Obtener el nombre del subproyecto desde la tabla de subproyectos\r\n        workset_table = doc.GetWorksetTable()\r\n        workset = workset_table.GetWorkset(workset_id)\r\n        workset_name = workset.Name\r\n        \r\n        # Buscar nuestro parámetro personalizado\r\n        param = item.LookupParameter(\"SUBPROYECTOS INTEGRADO\")\r\n        \r\n        # Si el parámetro existe y no es de solo lectura, escribimos el nombre\r\n        if param and not param.IsReadOnly:\r\n            param.Set(workset_name)\r\n            count += 1\r\n    except:\r\n        errors += 1\r\n\r\n# Finalizar la transacción\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# Salida para Dynamo\r\nOUT = \"Proceso finalizado. {} elementos actualizados. {} errores.\".format(count, errors)",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "032c106ccc5e4e05abf5d2ec74f23fb0",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "121192d792af40c688506c7530adf92c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3877405dfd814cd8b5d4089f7f52e450",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 420.0,
+      "WatchHeight": 38.0,
+      "Id": "ed3543af70794a72b2d64c1c8e194560",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "81c92951477c4bd6a65d1242f3b94111",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d981ff6de3234c2e85dcb5b4e4d2d7c7",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nimport math\r\n\r\n# 1. Cargar API de Revit\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 2. Cargar Servicios de Dynamo\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nopt = Options()\r\nopt.DetailLevel = ViewDetailLevel.Fine\r\nopt.ComputeReferences = True\r\nopt.IncludeNonVisibleObjects = True\r\n\r\n# ============================================================\r\n# FUNCIONES AUXILIARES BLINDADAS\r\n# ============================================================\r\n\r\ndef es_solido_valido(s):\r\n    \"\"\"Valida si un sólido de Revit es cerrado, tiene caras y volumen positivo.\"\"\"\r\n    if s is None:\r\n        return False\r\n    try:\r\n        if s.Faces.IsEmpty:\r\n            return False\r\n        return s.Volume > 0.00001\r\n    except Exception:\r\n        return False\r\n\r\ndef obtener_solidos(element):\r\n    \"\"\"Extrae todos los sólidos geométricos reales protegiendo contra excepciones.\"\"\"\r\n    solidos = []\r\n    try:\r\n        geom = element.get_Geometry(opt)\r\n        if geom is None:\r\n            return solidos\r\n        \r\n        for obj in geom:\r\n            if isinstance(obj, Solid):\r\n                if es_solido_valido(obj):\r\n                    solidos.append(obj)\r\n            elif isinstance(obj, GeometryInstance):\r\n                inst_geom = obj.GetInstanceGeometry()\r\n                if inst_geom:\r\n                    for s in inst_geom:\r\n                        if isinstance(s, Solid) and es_solido_valido(s):\r\n                            solidos.append(s)\r\n    except Exception:\r\n        pass\r\n    return solidos\r\n\r\n# ============================================================\r\n# PROCESAMIENTO POR CATEGORÍA\r\n# ============================================================\r\n\r\ndef procesar_muro(wall, solidos):\r\n    \"\"\"Calcula volumen, área útil y longitud de muros rectos o curvos.\"\"\"\r\n    # Descartar muros cortina\r\n    try:\r\n        wall_type = doc.GetElement(wall.GetTypeId())\r\n        if hasattr(wall_type, \"Kind\") and wall_type.Kind == WallKind.Curtain:\r\n            return None, None, None\r\n    except Exception:\r\n        pass\r\n\r\n    # 1. Volumen nativo\r\n    p_vol = wall.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED)\r\n    vol = p_vol.AsDouble() if (p_vol and p_vol.HasValue and p_vol.AsDouble() > 0.0001) else sum(s.Volume for s in solidos)\r\n\r\n    # 2. Longitud nativa / eje\r\n    longitud = None\r\n    if isinstance(wall.Location, LocationCurve):\r\n        longitud = wall.Location.Curve.Length\r\n\r\n    # 3. Área nativa\r\n    area_util = None\r\n    p_area = wall.get_Parameter(BuiltInParameter.HOST_AREA_COMPUTED)\r\n    if p_area and p_area.HasValue and p_area.AsDouble() > 0.0001:\r\n        area_util = p_area.AsDouble()\r\n    else:\r\n        caras_laterales = []\r\n        for s in solidos:\r\n            for face in s.Faces:\r\n                bb = face.GetBoundingBox()\r\n                u_mid = (bb.Min.U + bb.Max.U) / 2.0\r\n                v_mid = (bb.Min.V + bb.Max.V) / 2.0\r\n                try:\r\n                    normal = face.ComputeNormal(UV(u_mid, v_mid))\r\n                    if abs(normal.Z) < 0.2:\r\n                        caras_laterales.append(face.Area)\r\n                except Exception:\r\n                    continue\r\n\r\n        if caras_laterales:\r\n            caras_laterales.sort(reverse=True)\r\n            area_util = caras_laterales[0]\r\n\r\n    return vol, area_util, longitud\r\n\r\ndef procesar_viga_exacta(viga, solidos):\r\n    \"\"\"Calcula volumen y longitud física real de vigas.\"\"\"\r\n    if not solidos:\r\n        return 0.0, None, 0.0\r\n\r\n    vol_total = sum(s.Volume for s in solidos)\r\n    \r\n    if len(solidos) > 1:\r\n        longitud_total = 0.0\r\n        for s in solidos:\r\n            aristas_m = sorted([e.AsCurve().Length for e in s.Edges], reverse=True)\r\n            if aristas_m:\r\n                longitud_total += aristas_m[0]\r\n        return vol_total, None, longitud_total\r\n\r\n    s = solidos[0]\r\n    aristas = [e.AsCurve() for e in s.Edges if e.AsCurve().Length > 0.01]\r\n    if not aristas:\r\n        return vol_total, None, 0.0\r\n\r\n    aristas_ordenadas = sorted(aristas, key=lambda c: c.Length, reverse=True)\r\n    longitudes = [c.Length for c in aristas_ordenadas]\r\n\r\n    longitud_elegida = longitudes[0]\r\n    if len(longitudes) >= 3:\r\n        if abs(longitudes[1] - longitudes[2]) < 0.005 and abs(longitudes[0] - longitudes[1]) > 0.005:\r\n            longitud_elegida = longitudes[1]\r\n\r\n    return vol_total, None, longitud_elegida\r\n\r\ndef procesar_columna(col, solidos):\r\n    \"\"\"Calcula volumen y altura vertical neta de columnas.\"\"\"\r\n    p_vol = col.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED)\r\n    vol = p_vol.AsDouble() if (p_vol and p_vol.HasValue and p_vol.AsDouble() > 0.00001) else sum(s.Volume for s in solidos)\r\n\r\n    altura = None\r\n    for bip in (BuiltInParameter.INSTANCE_LENGTH_PARAM, BuiltInParameter.STRUCTURAL_FRAME_CUT_LENGTH):\r\n        p = col.get_Parameter(bip)\r\n        if p and p.HasValue and p.AsDouble() > 0.0001:\r\n            altura = p.AsDouble()\r\n            break\r\n\r\n    if altura is None and solidos:\r\n        bb = col.get_BoundingBox(None)\r\n        if bb:\r\n            altura = abs(bb.Max.Z - bb.Min.Z)\r\n\r\n    return vol, None, altura\r\n\r\ndef procesar_tuberia(pipe, solidos):\r\n    \"\"\"Calcula longitud de tuberías.\"\"\"\r\n    longitud = None\r\n    if isinstance(pipe.Location, LocationCurve):\r\n        longitud = pipe.Location.Curve.Length\r\n    else:\r\n        p_len = pipe.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)\r\n        if p_len and p_len.HasValue:\r\n            longitud = p_len.AsDouble()\r\n\r\n    area_ext = None\r\n    p_area = pipe.get_Parameter(BuiltInParameter.RBS_CURVE_SURFACE_AREA)\r\n    if p_area and p_area.HasValue and p_area.AsDouble() > 0.0001:\r\n        area_ext = p_area.AsDouble()\r\n\r\n    return None, area_ext, longitud\r\n\r\ndef procesar_ducto(duct, solidos):\r\n    \"\"\"Calcula longitud y área de conductos.\"\"\"\r\n    longitud = None\r\n    if isinstance(duct.Location, LocationCurve):\r\n        longitud = duct.Location.Curve.Length\r\n    else:\r\n        p_len = duct.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH)\r\n        if p_len and p_len.HasValue:\r\n            longitud = p_len.AsDouble()\r\n\r\n    area_ext = None\r\n    p_area = duct.get_Parameter(BuiltInParameter.RBS_CURVE_SURFACE_AREA)\r\n    if p_area and p_area.HasValue and p_area.AsDouble() > 0.0001:\r\n        area_ext = p_area.AsDouble()\r\n\r\n    return None, area_ext, longitud\r\n\r\ndef procesar_part(part, solidos):\r\n    \"\"\"Calcula volumen y área útil para piezas (Parts).\"\"\"\r\n    vol = sum(s.Volume for s in solidos)\r\n    area_util = None\r\n    caras_verticales = []\r\n    for s in solidos:\r\n        for face in s.Faces:\r\n            bb = face.GetBoundingBox()\r\n            u_mid = (bb.Min.U + bb.Max.U) / 2.0\r\n            v_mid = (bb.Min.V + bb.Max.V) / 2.0\r\n            try:\r\n                norm = face.ComputeNormal(UV(u_mid, v_mid))\r\n                if abs(norm.Z) < 0.2:\r\n                    caras_verticales.append(face.Area)\r\n            except Exception:\r\n                continue\r\n\r\n    if caras_verticales:\r\n        area_util = max(caras_verticales)\r\n    return vol, area_util, None\r\n\r\ndef procesar_piso(floor, solidos):\r\n    \"\"\"Calcula volumen y área superior para losas.\"\"\"\r\n    p_vol = floor.get_Parameter(BuiltInParameter.HOST_VOLUME_COMPUTED)\r\n    vol = p_vol.AsDouble() if (p_vol and p_vol.HasValue) else sum(s.Volume for s in solidos)\r\n\r\n    area_sup = 0.0\r\n    for s in solidos:\r\n        for face in s.Faces:\r\n            bb = face.GetBoundingBox()\r\n            u_mid = (bb.Min.U + bb.Max.U) / 2.0\r\n            v_mid = (bb.Min.V + bb.Max.V) / 2.0\r\n            try:\r\n                norm = face.ComputeNormal(UV(u_mid, v_mid))\r\n                if norm.Z > 0.8:\r\n                    area_sup += face.Area\r\n            except Exception:\r\n                continue\r\n\r\n    return vol, (area_sup if area_sup > 0.0001 else None), None\r\n\r\n# ============================================================\r\n# BUCLE PRINCIPAL\r\n# ============================================================\r\n\r\ncollector = FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\ncontador = 0\r\n\r\nfor el in collector:\r\n    if el.Category is None or el.Category.CategoryType != CategoryType.Model:\r\n        continue\r\n\r\n    cat_id = el.Category.Id.IntegerValue\r\n    solidos = obtener_solidos(el)\r\n    \r\n    if not solidos and not hasattr(el, \"Location\"):\r\n        continue\r\n\r\n    v_val, a_val, l_val = None, None, None\r\n\r\n    try:\r\n        # 1. MUROS (se procesan SIEMPRE, incluso si tienen Parts)\r\n        if cat_id == int(BuiltInCategory.OST_Walls):\r\n            v_val, a_val, l_val = procesar_muro(el, solidos)\r\n\r\n        # 2. VIGAS\r\n        elif cat_id == int(BuiltInCategory.OST_StructuralFraming):\r\n            v_val, a_val, l_val = procesar_viga_exacta(el, solidos)\r\n\r\n        # 3. COLUMNAS / PILARES\r\n        elif cat_id in (int(BuiltInCategory.OST_Columns), int(BuiltInCategory.OST_StructuralColumns)):\r\n            v_val, a_val, l_val = procesar_columna(el, solidos)\r\n\r\n        # 4. TUBERÍAS\r\n        elif cat_id == int(BuiltInCategory.OST_PipeCurves):\r\n            v_val, a_val, l_val = procesar_tuberia(el, solidos)\r\n\r\n        # 5. DUCTOS\r\n        elif cat_id == int(BuiltInCategory.OST_DuctCurves):\r\n            v_val, a_val, l_val = procesar_ducto(el, solidos)\r\n\r\n        # 6. PIEZAS (PARTS)\r\n        elif cat_id == int(BuiltInCategory.OST_Parts):\r\n            v_val, a_val, l_val = procesar_part(el, solidos)\r\n\r\n        # 7. SUELOS / LOSAS\r\n        elif cat_id == int(BuiltInCategory.OST_Floors):\r\n            v_val, a_val, l_val = procesar_piso(el, solidos)\r\n\r\n        # 8. ELEMENTOS GENÉRICOS\r\n        else:\r\n            v_val = sum(s.Volume for s in solidos) if solidos else None\r\n\r\n        # Asignación de parámetros\r\n        mapa = {\r\n            \"VOLUMEN INTEGRADO\": v_val,\r\n            \"AREA INTEGRADO\": a_val,\r\n            \"LONGITUD INTEGRADO\": l_val\r\n        }\r\n\r\n        tocado = False\r\n        for p_name, val in mapa.items():\r\n            param = el.LookupParameter(p_name)\r\n            if param and not param.IsReadOnly:\r\n                if val is not None and val > 0.00001:\r\n                    param.Set(float(val))\r\n                    tocado = True\r\n                else:\r\n                    try:\r\n                        param.ClearValue()\r\n                    except Exception:\r\n                        param.Set(0.0)\r\n                    tocado = True\r\n\r\n        if tocado:\r\n            contador += 1\r\n\r\n    except Exception:\r\n        continue\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nOUT = f\"Ejecución completada con éxito. Elementos actualizados: {contador}\"",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "5ddd13013cce4336b7646d2f58d58a63",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "f9dc0d253885454198af89ebc5835855",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "866be398b3c54cfc8141eca8cc0bc70d",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 312.0,
+      "WatchHeight": 38.0,
+      "Id": "3f73c78876a6434c8e211e509b9f4b03",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "d97a71f65f5a43b8a3efaa508e9a99ac",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "12478dc69b7c414bbb64b36410981cfb",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 420.0,
+      "WatchHeight": 38.0,
+      "Id": "e9c3030e6d014fd187e5864fb0933250",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "b94fedd9229941f5baf163e2aff70580",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c1db3be662bd428191d8dae854bae12c",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n\r\n# Cargar API de Revit\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nview = doc.ActiveView # Obtiene la vista actual\r\n\r\n# --- DICCIONARIO DE MAPEO ---\r\nmapping = {\r\n    \"Walls\": \"MUROS\", \"Muros\": \"MUROS\",\r\n    \"Structural Columns\": \"COLUMNAS\", \"Pilares estructurales\": \"COLUMNAS\",\r\n    \"Columns\": \"COLUMNAS\", \"Pilares\": \"COLUMNAS\",\r\n    \"Windows\": \"VENTANAS\", \"Ventanas\": \"VENTANAS\",\r\n    \"Doors\": \"PUERTAS\", \"Puertas\": \"PUERTAS\",\r\n    \"Floors\": \"PISOS / PLACAS\", \"Suelos\": \"PISOS / PLACAS\",\r\n    \"Furniture\": \"MOBILIARIO\", \"Mobiliario\": \"MOBILIARIO\",\r\n    \"Plumbing Fixtures\": \"APARATOS SANITARIOS\", \"Aparatos sanitarios\": \"APARATOS SANITARIOS\",\r\n    \"Structural Framing\": \"VIGAS\", \"Armazón estructural\": \"VIGAS\",\r\n    \"Roofs\": \"CUBIERTAS\", \"Cubiertas\": \"CUBIERTAS\",\r\n    \"Stairs\": \"ESCALERAS\", \"Escaleras\": \"ESCALERAS\"\r\n}\r\n\r\n# Colectar TODOS los elementos visibles en la vista activa que tengan categoría\r\ncollector = FilteredElementCollector(doc, view.Id)\\\r\n            .WhereElementIsNotElementType()\\\r\n            .ToElements()\r\n\r\nresults = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nfor item in collector:\r\n    # Ignorar elementos sin categoría (como líneas de detalle o planos de referencia)\r\n    if item.Category is None:\r\n        continue\r\n        \r\n    try:\r\n        cat_name = item.Category.Name\r\n        # Buscar traducción o usar nombre original en MAYÚSCULAS\r\n        simplified_name = mapping.get(cat_name, cat_name.upper())\r\n        \r\n        # Acceder al parámetro personalizado\r\n        param = item.LookupParameter(\"CLASIFICACIÓN\")\r\n        \r\n        if param and not param.IsReadOnly:\r\n            param.Set(simplified_name)\r\n            results.append(\"Asignado: \" + simplified_name)\r\n    except:\r\n        continue\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nOUT = \"Se procesaron \" + str(len(results)) + \" elementos en la vista actual.\"",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "e5bb1b9e3d1f47f5807ae3567bfc4679",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "accc937444874541b32268dbffbd12df",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5fd2bc11420d4e728a42851eb70e48b3",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 358.0,
+      "WatchHeight": 200.0,
+      "Id": "62992c43776a4676b5fb98e3ef94ec3f",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "5eecb056817b4ce9a45bac4c58650e3b",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "caabd4caf694405aa74cf79924fc471a",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "dbf9571bb3f34262b1b00e182b463375",
+      "End": "4d6d8c8b42c3489caffab97953350adb",
+      "Id": "cdb154352e6b4b82b97fc99e3c4807c9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "52f3b896e5584aa782b893b293641122",
+      "End": "9b50022ee1344a15a14b6dcbaaa7d3d5",
+      "Id": "470be58ea79c4e958bced5b74dfed13e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0de09ef1a4c94ad6ab94184d29b8f8ce",
+      "End": "d97a71f65f5a43b8a3efaa508e9a99ac",
+      "Id": "29ff2a6849ba4ecaa54fa48d15de10b5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3877405dfd814cd8b5d4089f7f52e450",
+      "End": "b94fedd9229941f5baf163e2aff70580",
+      "Id": "338e33c0ece249329b16b3c822d56c97",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "866be398b3c54cfc8141eca8cc0bc70d",
+      "End": "81c92951477c4bd6a65d1242f3b94111",
+      "Id": "d5116454c1ae4951ae60f36fdb5259ef",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5fd2bc11420d4e728a42851eb70e48b3",
+      "End": "5eecb056817b4ce9a45bac4c58650e3b",
+      "Id": "f922d45b0f2f49a9bc64c4d0870c74a9",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Propiedades",
+      "Version": "2.19",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "6.1",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "20756662ccee402fbf7869295f50d17a",
+        "Name": "NIVEL INTEGRADO",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 247.17804154302667,
+        "Y": 105.60534124629083
+      },
+      {
+        "Id": "9edbc214adec41ecaf2f618f8d1c8414",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 634.121661721068,
+        "Y": 105.60534124629083
+      },
+      {
+        "Id": "5d7e31ce22c44fed99d7489387b11bd9",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 634.121661721068,
+        "Y": 272.3353115727
+      },
+      {
+        "Id": "182332a000244b5da8cea31bd0aa19f5",
+        "Name": "MATERIAL INTEGRADO",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 247.178041543027,
+        "Y": 345.053412462908
+      },
+      {
+        "Id": "e1f8f5e09d8e4cd6bbf0eb551407f4d8",
+        "Name": "NOMBRE INTGERADO",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 237.966530487818,
+        "Y": 950.743304442916
+      },
+      {
+        "Id": "032c106ccc5e4e05abf5d2ec74f23fb0",
+        "Name": "SUBPROYECTOS INTEGRADO",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 246.883702635223,
+        "Y": 1275.23999906535
+      },
+      {
+        "Id": "ed3543af70794a72b2d64c1c8e194560",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 637.682492581602,
+        "Y": 586.875370919881
+      },
+      {
+        "Id": "5ddd13013cce4336b7646d2f58d58a63",
+        "Name": "DIMENSIONES INTEGRADAS",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 247.178041543027,
+        "Y": 584.501483679525
+      },
+      {
+        "Id": "3f73c78876a6434c8e211e509b9f4b03",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 652.479999776627,
+        "Y": 948.809703777037
+      },
+      {
+        "Id": "e9c3030e6d014fd187e5864fb0933250",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 621.666830952169,
+        "Y": 1281.2991423502
+      },
+      {
+        "Id": "e5bb1b9e3d1f47f5807ae3567bfc4679",
+        "Name": "CLASIFICACIÓN",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 268.71774305012354,
+        "Y": 1490.8079829465553
+      },
+      {
+        "Id": "62992c43776a4676b5fb98e3ef94ec3f",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 633.0709569365029,
+        "Y": 1488.7180441728826
+      }
+    ],
+    "Annotations": [],
+    "X": 285.7123219039946,
+    "Y": -161.41269975946426,
+    "Zoom": 0.7501653379855618
+  }
+}
