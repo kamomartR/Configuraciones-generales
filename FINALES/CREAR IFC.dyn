@@ -1,0 +1,160 @@
+{
+  "Uuid": "dffdf769-e274-4807-ad77-3ab601633ddd",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "CREAR IFC",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nimport os\r\n\r\n# Cargar librerías de interfaz de Windows\r\nclr.AddReference('System.Windows.Forms')\r\nfrom System.Windows.Forms import FolderBrowserDialog, DialogResult, MessageBox\r\n\r\n# Cargar API de Revit\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# --- 1. VALIDACIÓN DE VISTA ACTIVA ---\r\nactive_view = doc.ActiveView\r\nif active_view.ViewType != ViewType.ThreeD:\r\n    MessageBox.Show(\r\n        \"Debes estar en una vista 3D activa para exportar el IFC con esta configuración.\",\r\n        \"Vista Inválida\"\r\n    )\r\n    OUT = 0\r\nelse:\r\n    # --- 2. VENTANA DE SELECCIÓN (Sin memoria previa) ---\r\n    dialog = FolderBrowserDialog()\r\n    dialog.Description = \"Seleccione la carpeta para exportar el IFC\"\r\n\r\n    clr.AddReference('System')\r\n    import System\r\n    dialog.RootFolder = System.Environment.SpecialFolder.Desktop\r\n\r\n    if dialog.ShowDialog() == DialogResult.OK:\r\n        folder_path = dialog.SelectedPath\r\n        \r\n        # Limpieza de nombre\r\n        raw_name = doc.Title.split(\".rvt\")[0].split(\"_backup\")[0]\r\n        file_name = \"\".join(c for c in raw_name if c not in r'\\/:*?\"<>|')\r\n\r\n        # --- 3. CONFIGURACIÓN IFC (Nombres limpios para reemplazo de tipos) ---\r\n        options = IFCExportOptions()\r\n        options.FileVersion = IFCVersion.IFC2x3CV2\r\n        \r\n        # Opciones generales (según la configuración inicial)\r\n        options.AddOption(\"ExportInternalRevitPropertySets\", \"True\")\r\n        options.AddOption(\"ExportPartsAsElements\", \"True\")\r\n        options.AddOption(\"LocationContext\", \"Shared\")\r\n        options.AddOption(\"ExportVisibleElementsInView\", \"True\")\r\n        \r\n        # CONFIGURACIÓN EXACTA DE NOMENCLATURA:\r\n        # 1. Solo el nombre del tipo (ej: \"2\") para el tipo IFC\r\n        options.AddOption(\"UseTypeNameOnlyForIfcType\", \"True\")\r\n        \r\n        # 2. Desactivar prefijos de familia y categoría\r\n        options.AddOption(\"UseFamilyAndTypeNameForReference\", \"False\")\r\n        options.AddOption(\"UseVisibleRevitNameAsEntityName\", \"False\")\r\n        \r\n        options.FilterViewId = active_view.Id\r\n        options.SpaceBoundaryLevel = 0 \r\n\r\n        # --- 4. EXPORTACIÓN ---\r\n        TransactionManager.Instance.EnsureInTransaction(doc)\r\n        try:\r\n            success = doc.Export(folder_path, file_name, options)\r\n            TransactionManager.Instance.TransactionTaskDone()\r\n            \r\n            if success:\r\n                expected_file = os.path.join(folder_path, file_name + \".ifc\")\r\n                if os.path.exists(expected_file):\r\n                    os.startfile(folder_path)\r\n                    MessageBox.Show(f\"IFC Creado con éxito:\\n{file_name}.ifc\", \"BIM Automation\")\r\n                    OUT = 1\r\n                else:\r\n                    MessageBox.Show(\"El proceso terminó pero no se encontró el archivo.\", \"Advertencia\")\r\n                    OUT = 0\r\n            else:\r\n                MessageBox.Show(\"Revit devolvió False al intentar exportar.\", \"Fallo de Exportación\")\r\n                OUT = 0\r\n                \r\n        except Exception as e:\r\n            TransactionManager.Instance.TransactionTaskDone()\r\n            MessageBox.Show(f\"Error durante la exportación:\\n{str(e)}\", \"Error\")\r\n            OUT = -1\r\n    else:\r\n        OUT = 2",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "ab9ab95252724e3b9a653e9ba46e59d7",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "c3266e4749ed441598c816900465022e",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5ae5e015985a43fba3b280509e948f60",
+          "Name": "OUT",
+          "Description": "Resultado de la secuencia de comandos de Python",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Ejecuta una secuencia de comandos de Python incrustada."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 27.2,
+      "WatchHeight": 38.4,
+      "Id": "4b3a1c06e309495fab43d92a3530b039",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "c41dfe8285d94b7a85f124cfe3d7cc85",
+          "Name": "",
+          "Description": "Nodo desde el que se mostrará la salida",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "72e2c6797a9648b192f72508a258d4c8",
+          "Name": "",
+          "Description": "Salida del nodo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualice la salida del nodo."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "5ae5e015985a43fba3b280509e948f60",
+      "End": "c41dfe8285d94b7a85f124cfe3d7cc85",
+      "Id": "364d16c424274f75a0f6eebe71c5a0d7",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Propiedades",
+      "Version": "2.19",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "6.1",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "Ninguno",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.19.3.6394",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Vista preliminar en segundo plano",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "ab9ab95252724e3b9a653e9ba46e59d7",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 124.00000000000006,
+        "Y": 176.0
+      },
+      {
+        "Id": "4b3a1c06e309495fab43d92a3530b039",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 363.20000000000016,
+        "Y": 172.0
+      }
+    ],
+    "Annotations": [],
+    "X": 112.41559518174041,
+    "Y": 192.94850463214644,
+    "Zoom": 0.49618648738281262
+  }
+}
